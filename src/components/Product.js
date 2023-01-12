@@ -19,10 +19,12 @@ const Product = ({ id, title, price, description, category, image }) => {
     const product = {
       id,
       title,
+      rating,
       price,
       description,
       category,
-      image
+      image,
+      hasPrime
     };
 
     //Sending an product to the redux store .... the basketSLice
