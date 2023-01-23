@@ -16,6 +16,8 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_SIGNING_SECRET;
 
 const fulfillOrder = async (session) => {
+// console.log(session);
+
     return app
         .firestore()
         .collection("users")
@@ -25,8 +27,9 @@ const fulfillOrder = async (session) => {
         .set({
             amount: session.amount_total / 100,
             amount_shipping: session.total_details.amount_shipping / 100,
+            // shipping_cost: session.total_details.amount_shipping / 100,
             images: JSON.parse(session.metadata.images),
-            timestamp: admin.firestore.FieldValue.serverTimestamp()
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
         })
         .then(() => {
             return console.log(`SUCCESS: Order ${session.id} has been added to the DB`);
@@ -53,17 +56,15 @@ export default async (req, res) => {
         if (event.type === "checkout.session.completed") {
             const session = event.data.object;
 
-            //FIREBASE - store the user and the stripe session id in the database
-            const db = app.firestore();
-
-            const user = await db
-                .collection("users")
-                .doc(session.customer_email)
-                .get();
-
-            await db
-                .collection("users")
-
+            //Fulfill the order
+            return fulfillOrder(session).then(() => res.status(200)).catch((err) => res.status(400).send(`Webhook Error: ${err.message}`));
         }
     }
-};  
+};
+
+export const config = {
+    api: {
+        bodyParser: false,
+        externalResolver: true,
+    }
+}
